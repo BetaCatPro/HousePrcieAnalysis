@@ -15,6 +15,7 @@
 
 基本流程：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200501204631344.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 ## 一. 数据采集
 数据抓取项目为另一个项目：[项目地址](https://github.com/BetaCatPro/Joint-spiders)，主要抓取房源的特征有：
 | 字段名称          | 字段含义     |
@@ -38,6 +39,7 @@
 
 爬取完成后导入Excel文件
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200501210110808.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 另外，考虑到后边将进行地图展示，所以还需增加地理坐标信息：经纬度，这部分将在数据清洗后进行。
 
 ## 二. 数据清洗
@@ -61,6 +63,7 @@ result = pd.concat(datas)
 ```
 这里我们就得到了总体数据集，使用`result.info()`及`result.shape`查看基本信息：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/2020050121262299.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 通过以上代码，可以看出训练集数据总共有110556条房屋记录，总共有16列数据，仔细检查数据，可以发现存在很多的缺失值。
 
 **2. 数据的探索性可视化分析**
