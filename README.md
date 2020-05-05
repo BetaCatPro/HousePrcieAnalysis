@@ -403,3 +403,238 @@ position_result.to_csv('./cleandata/updateposition/lnglat.csv')
 
 ## 五. 特征工程
 
+
+`df = pd.read_csv('./housedata/fin_house2.csv',encoding='gbk')`
+
+**1. 目标变量（price）处理**
+
+定义函数`plt_distribution`用于绘制特征变量的分布图像。
+
+```python
+def plt_distribution(data, obj_col):
+    plt.figure(figsize=(10,6))
+    sns.distplot(data[obj_col] , fit=norm);
+
+    # 获取数据分布曲线的拟合均值和标准差
+    (mu, sigma) = norm.fit(data[obj_col])
+    print( '\n mu = {:.2f} and sigma = {:.2f}\n'.format(mu, sigma))
+
+    # 绘制分布曲线
+    
+    plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)],
+                loc='best')
+    plt.ylabel('Frequency')
+    plt.title('SalePrice distribution')
+    
+    # 绘制图像查看数据的分布状态
+    fig = plt.figure()
+    plt.figure(figsize=(10,6))
+    tmp = stats.probplot(data[obj_col], plot=plt)
+    plt.show()
+plt_distribution(df, 'price')        # 目标变量变换前的分布情况
+```
+对数变换前，目标变量的分布情况:
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220129330.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220129317.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+显然目标变量呈现明显的偏态分布，这里我们需要将它变换成无偏的正态分布，因为通常的线性模型所针对的数据都是正态分布的数据。
+
+`df["price"] = np.log1p(df["price"]) # 对数变换`
+`plt_distribution(df, 'price') # 变换后的分布情况`
+
+对数变换后，目标变量的分布情况:
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220411499.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220411811.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+**2. 特征编码**
+2.1 顺序特征编码-处理楼层信息
+
+- 数据特征中存在一些顺序变量(ordinal variable),它们不同于一般的类型变量（categorical variable），顺序变量之间存在固有的顺序 比如 (低, 中, 高) 、病人疼痛指数 ( 1 到 10 - 但是他们之间的差是没有意义的, 因为1 到 10 仅仅表现了顺序)。
+- 对于顺序变量，标签编码（LabelEncoder）的方式无法正确识别这种顺序关系。
+
+查看楼层信息：`np.unique(df['floor'])`
+*截图不完整*
+![在这里插入图片描述](https://img-blog.csdnimg.cn/2020050522075573.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+定义函数`process_floor`对顺序变量进行编码,以10层为标准，将楼层分为6个等级：
+
+- 低于10层且位于该楼的低层，即数据集中的低楼层：level=0
+- 低于10层且位于该楼的中层，即数据集中的中楼层：level=1
+- 低于10层且位于该楼的高层，即数据集中的高楼层：level=2
+- 高于10层且位于该楼的低层，即数据集中的低楼层：level=3
+- 高于10层且位于该楼的中层，即数据集中的中楼层：level=4
+- 高于10层且位于该楼的高层，即数据集中的高楼层：level=5
+- 其他：level=0
+
+```python
+import re
+level = 0
+def process_floor(x):
+    floor_level = x[0:1]
+    floor_level_num = int(re.findall(r"\d+\.?\d*",x)[0]) if re.findall(r"\d+\.?\d*",x) else 1
+    if floor_level == '低' and floor_level_num < 10:
+        level = 0
+    elif floor_level == '中' and floor_level_num < 10:
+        level = 1
+    elif floor_level == '高' and floor_level_num < 10:
+        level = 2
+    if floor_level == '低' and floor_level_num >= 10:
+        level = 3
+    elif floor_level == '中' and floor_level_num >= 10:
+        level = 4
+    elif floor_level == '高' and floor_level_num >= 10:
+        level = 5
+    else:
+        level = 0
+    return level
+## 顺序变量特征编码，替换元数据表示
+cols = ['floor']
+for col in cols:
+    df[col] = df[col].apply(process_floor)
+```
+
+2.2 类别类编码
+
+```python
+cols = ['region','type', 'construction_area', 'orientation', 'decoration','elevator','purposes','house_structure']
+# 全部转换为string类型
+for col in cols:
+    df[col] = df[col].astype(str)
+```
+2.3 字符型特征标签编码(独热编码(OneHotEncoder)和标签编码(LabelEncoder)编码)
+
+除了前面已经做了顺序特征编码的特征，这里需要对其他字符型特征进行数值型编码。对于字符型特征可以采用独热编码(OneHotEncoder)和标签编码(LabelEncoder)编码方式将字符型特征转换成数值型特征。
+
+使用LabelEncoder和get_dummies来实现这些功能：
+
+对orientation等数据等进行LabelEncoder编码，由于这类数据存在较多取值，直接进行独热编码会造成过于稀疏的数据，并且严重增加特征维度，因此在特征工程中会将其利用LabelEncoder进行数字化编码 ）
+```python
+df['construction_area']=df['construction_area'].astype(float)
+## 年份特征的标签编码
+# str_cols = ["year"]
+# for col in str_cols:
+#     df[col] = LabelEncoder().fit_transform(df[col])
+
+## 为了后续构建有意义的其他特征而进行标签编码
+lab_cols = ['orientation','elevator', 'purposes', 'house_structure','decoration']
+
+for col in lab_cols:
+    new_col = "lab_" + col
+    df[new_col] = LabelEncoder().fit_transform(df[col]) 
+```
+2.4 处理户型特征
+
+查看户型数值信息`df['type'].value_counts()`：
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222150545.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+单独处理户型，用 str.extract() 方法，将"室","厅","卫"都提取出来，单独作为三个新特征：
+
+```python
+# 室
+df['type_room_num'] = df['type'].str.extract('(^\d).*', expand=False)
+# 厅
+df['type_hall_num'] = df['type'].str.extract('^\d.*?(\d).*', expand=False)
+# 卫
+df['type_wash_num'] = df['type'].str.extract('^\d.*?\d.*?(\d).*', expand=False)
+# 转换类型
+df['type_room_num'] = df['type_room_num'].fillna('1').astype('int64')
+df['type_hall_num'] = df['type_hall_num'].fillna('1').astype('int64')
+df['type_wash_num'] = df['type_wash_num'].fillna('1').astype('int64')
+```
+2.5 处理行政区划特征
+
+使用one-hot编码修改特征"region"：
+
+```python
+df['region'] = df['region'].apply(lambda x: re.sub(r"\[|\]|'", '', x).split(',')[0])
+district = pd.get_dummies(df['region'], prefix='行政区划')
+data = pd.concat([df, district], axis=1)
+```
+查看处理结果
+`fin_data = data.copy()`
+`data.drop(['unit_price','price','title','floor','construction_area','from_url','idi','image_urls','release_date','lat','lng','community_name','type','orientation','elevator', 'purposes', 'house_structure','decoration'], axis=1, inplace=True)`
+`print(data)`
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222726530.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+**3. 查看相关系数**
+
+```python
+# 删除旧特征
+fin_data.drop(['title','from_url','idi','region','image_urls','release_date','lat','lng','community_name','type','orientation','elevator', 'purposes', 'house_structure','decoration'], axis=1, inplace=True)
+
+corrmat = fin_data.corr()
+ 
+f, ax = plt.subplots(figsize=(13, 10))
+sns.heatmap(corrmat, vmax=.8, square=True)
+plt.show()
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222947782.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+**4. 连续变量特征的数据变换：改变源特征数据的分布**
+
+通过函数变换来改变原始数值型特征的分布：
+- 变换后可以更加便捷的发现数据之间的关系：从没有关系变成有关系，使得模型更好利用数据；
+- 很多特征的数据呈现严重的偏态分布（例如：很多偏小的值聚在一起），变换后可以拉开差异；
+- 让数据符合模型理论所需要的假设，然后对其进行分析，例如变换后的数据呈现正态分布；
+常用数据转换方法的有：对数转换，box-cox转换等变换方式，其中对数转换的方式是最为常用的，取对数之后数据的性质和相关关系不会发生改变，但压缩了变量的尺度，大大方便了计算。
+
+此处，绘制每个数值型特征与目标变量的分布情况：
+
+```python
+num_features = fin_data.select_dtypes(include=['int64','float64','int32']).copy()
+num_features.drop(['price','unit_price'],axis=1,inplace=True)
+num_feature_names = list(num_features.columns)
+
+num_features_data = pd.melt(fin_data, value_vars=num_feature_names)
+g = sns.FacetGrid(num_features_data, col="variable",  col_wrap=5, sharex=False, sharey=False)
+g = g.map(sns.distplot, "value")
+plt.show()
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505223257123.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+计算各数值型特征变量的偏度（skewness）：
+
+```python
+skewed_feats = fin_data[num_feature_names].apply(lambda x: skew(x.dropna())).sort_values(ascending=False)
+skewness = pd.DataFrame({'Skew' :skewed_feats})
+skewness
+# skewness[skewness["Skew"].abs()>0.75]
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505223420113.png#pic_center)
+根据图像显示，可以看到数值型特征变量偏移程度，此处设置阈值为1，对偏度大于阈值的特征进行log函数变换操作以提升质量：
+
+```python
+skew_cols = list(skewness[skewness["Skew"].abs()>1].index)
+for col in skew_cols:
+    #fin_data[col] = boxcox1p(all_data[col], 0.15)                                  # 偏度超过阈值的特征做box-cox变换
+    fin_data[col] = np.log1p(fin_data[col])                                                  # 偏度超过阈值的特征对数变换
+```
+fin_data最终信息：
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505223624176.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+**5. 建立模型**
+
+注：在进行数据建模前，还需更具情况对数据进行特征降维-特征数过多的情况，然后进行特征选择，这里我并没有这部做法，毕竟特征数太少，感兴趣的同学可以尝试。
+
+特征降维的方式也有很多种，例如主成分分析，这里根据特征的重要性图来进行选择出利于模型训练的关键特征，从而达到特征降维的目的。由于套索回归模型（Lasso）的系数可以表证特征的重要程度。
+
+- 将数据拆分回训练数据和测试数据
+- 特征归一化 
+- 特征的选择--基于特征重要性图来选择
+
+当然，你也可以采用xgboost等模型获取特征的重要性程度。
+
+5.1 数据划分
+划分数据为训练集和测试集，并进行数据归一化：
+
+```python
+#确定数据中的特征与标签
+fin_data.drop(['unit_price'], axis=1, inplace=True)
+x = fin_data.as_matrix()[:,1:]
+y = fin_data.as_matrix()[:,0].reshape(-1,1)
+ 
+#数据分割，随机采样25%作为测试样本，其余作为训练样本
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=40, test_size=0.25)
+
+#数据标准化处理(归一化)
+ss_x = StandardScaler()
+ss_y = StandardScaler()
+x_train = ss_x.fit_transform(x_train)
+x_test = ss_x.transform(x_test)
+y_train = ss_y.fit_transform(y_train)
+y_test = ss_y.transform(y_test)
+```
