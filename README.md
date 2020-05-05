@@ -93,6 +93,7 @@ False表示未重复的数目，True表示重复数目。通过`drop_duplicates`
 res = result.drop_duplicates(subset=None,keep='first',inplace=False)
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/2020050421505423.png#pic_center)
+
 3.2 检测与处理缺失值
 查看缺失值统计结果：
 ```python
@@ -110,6 +111,7 @@ res1['orientation'].fillna(random.choice(orientations),inplace=True)
 res1['decoration'].fillna(random.choice(decorations),inplace=True)
 res1['house_structure'].fillna(random.choice(house_structures),inplace=True)
 ```
+
 3.3 检测异常值
 这之前先将面积特征转换为浮点数类型：`res1['construction_area'] = res1['construction_area'].str.replace('㎡','').astype("float")`，去掉'㎡'。此时查看数据集描述信息，包括最小值，下四分位数，均值，上四分位数，最大值，方差，数量信息。
 
@@ -147,6 +149,7 @@ plt.ylabel('单价',fontsize=15)
 plt.show()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504221105144.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 3.4 处理异常值
 通过上面观察分析，房价个面积都存在异常情况，对其分别处理。
 首先处理离群值和有失一般性值，比如上图中的面积：
@@ -163,6 +166,7 @@ print(res1[res1['unit_price']==0]['community_name'])
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504221443528.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
 由于数据量过小，所以直接删除`res1.drop(res1[res1['price']==0].index,inplace=True)`,但是如果对于存在一定数量相关值时，不能直接删除，这样会影响数据。这里可以采用一种替换值法：获取到每条数据对应的小区的均价，用这个均价来填充房源单价，面积同样采用这个方法，最后房屋总价通过计算单价和面值积获得。当然也可用机器学习算法建模获取与待处理目标最相近的房源的数据来填充该处理目标。处理后的面积散点图：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504222159595.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 3.5 其他标准
 绘制出装修情况，建筑结构，房屋用途，房屋面积与房价的散点图：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504222408539.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
@@ -225,6 +229,7 @@ def getlnglat_gaode(address):
 ```
 测试：`lat,lang = getlnglat_gaode('四川省成都市新津金秋乐园一期')`
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504224930636.png#pic_center)
+
 **2. 处理全部数据**
 
 2.1 定义基本数据结构：
@@ -242,6 +247,7 @@ address = ''
 # 格式化数据
 lat_lng_data = {"id":idint,"community_name":community_names,"lat":lats,"lng":lngs}
 ```
+
 2.2 生成经纬度信息，这里我们的数据保存策略是每两千条存储到一个CSV文件中，以免断开链接后数据丢失的问题：
 
 ```python
@@ -304,6 +310,7 @@ for file in res:
 position_result = pd.concat(datas)
 position_result.to_csv('./cleandata/lnglat.csv')
 ```
+
 **4. 合并得到最终数据**
 
 将房源数据集和做坐标数据集按Id合并，保证数据对应的一致性，由于前边做坐标转换时是根据id来存数据的，所以不存在数据对应出错的问题。
@@ -316,6 +323,7 @@ df_merge.to_csv('./housedata/fin_house.csv')
 注：这里的最终数据`fin_house.csv`中的坐标是遵循高德地图坐标，如果是做高德地图应用的话，就可直接使用了，但我是采用的百度地图，所以我还要在进行高德地图和百度地图的坐标转换，以及坐标纠正，不需要这一步的同学可以跳过。
 
 ## 四. 高德坐标转百度坐标
+
 **1. 定义转换函数，实现坐标对接：**
 
 相关参数详情见百度地图开发者文档。
@@ -340,6 +348,7 @@ def parse2lnglat(lng,lat):
 
 测试：`lat,lng = parse2lnglat(104.006705,30.577101)`
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504231245951.png#pic_center)
+
 **2. 生成经纬度信息**
 
 这一步和上面解析地址类似
@@ -448,6 +457,7 @@ plt_distribution(df, 'price')        # 目标变量变换前的分布情况
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220411811.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 **2. 特征编码**
+
 2.1 顺序特征编码-处理楼层信息
 
 - 数据特征中存在一些顺序变量(ordinal variable),它们不同于一般的类型变量（categorical variable），顺序变量之间存在固有的顺序 比如 (低, 中, 高) 、病人疼痛指数 ( 1 到 10 - 但是他们之间的差是没有意义的, 因为1 到 10 仅仅表现了顺序)。
@@ -501,6 +511,7 @@ cols = ['region','type', 'construction_area', 'orientation', 'decoration','eleva
 for col in cols:
     df[col] = df[col].astype(str)
 ```
+
 2.3 字符型特征标签编码(独热编码(OneHotEncoder)和标签编码(LabelEncoder)编码)
 
 除了前面已经做了顺序特征编码的特征，这里需要对其他字符型特征进行数值型编码。对于字符型特征可以采用独热编码(OneHotEncoder)和标签编码(LabelEncoder)编码方式将字符型特征转换成数值型特征。
@@ -522,6 +533,7 @@ for col in lab_cols:
     new_col = "lab_" + col
     df[new_col] = LabelEncoder().fit_transform(df[col]) 
 ```
+
 2.4 处理户型特征
 
 查看户型数值信息`df['type'].value_counts()`：
@@ -540,6 +552,7 @@ df['type_room_num'] = df['type_room_num'].fillna('1').astype('int64')
 df['type_hall_num'] = df['type_hall_num'].fillna('1').astype('int64')
 df['type_wash_num'] = df['type_wash_num'].fillna('1').astype('int64')
 ```
+
 2.5 处理行政区划特征
 
 使用one-hot编码修改特征"region"：
@@ -554,6 +567,7 @@ data = pd.concat([df, district], axis=1)
 `data.drop(['unit_price','price','title','floor','construction_area','from_url','idi','image_urls','release_date','lat','lng','community_name','type','orientation','elevator', 'purposes', 'house_structure','decoration'], axis=1, inplace=True)`
 `print(data)`
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222726530.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 **3. 查看相关系数**
 
 ```python
@@ -567,6 +581,7 @@ sns.heatmap(corrmat, vmax=.8, square=True)
 plt.show()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222947782.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 **4. 连续变量特征的数据变换：改变源特征数据的分布**
 
 通过函数变换来改变原始数值型特征的分布：
@@ -607,6 +622,7 @@ for col in skew_cols:
 ```
 fin_data最终信息：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505223624176.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 **5. 建立模型**
 
 注：在进行数据建模前，还需更具情况对数据进行特征降维-特征数过多的情况，然后进行特征选择，这里我并没有这部做法，毕竟特征数太少，感兴趣的同学可以尝试。
