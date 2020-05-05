@@ -76,6 +76,7 @@ ppf.ProfileReport(df_train)
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200501213640993.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/202005012136413.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
 通过以上数据探索性分析报告可以看出数据集的基本信息、哪些特征属性的缺失值和0元素的占比情况、各特征变量的分布情况以及相关性等等。
 
 **3. 数据清洗**
@@ -87,6 +88,7 @@ ppf.ProfileReport(df_train)
 result.duplicated().value_counts()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504214925515.png#pic_center)
+
 False表示未重复的数目，True表示重复数目。通过`drop_duplicates`方法去除数据集中所有重复值：
 
 ```python
@@ -100,6 +102,7 @@ res = result.drop_duplicates(subset=None,keep='first',inplace=False)
 res.isnull().sum()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504215253350.png#pic_center)
+
 上面可以看出房屋朝向(orientation)，装修情况(decoration)，建筑结构(house_structure)存在大量缺失值。关于缺失值处理有很多处理方法，比如直接删除，使用随即森林法填充等，这里我们使用特定数据进行填充。定义房屋朝向列表`['东','南','西','北','东南','西南','东北','西北']`，装修情况列表`['简装','精装','毛坯','其他']`，建筑结构列表 `['钢混结构','钢结构','混合结构','框架结构','未知','砖混结构','砖木结构']`。用这里的值进行随机填充。
 
 ```python
@@ -119,6 +122,7 @@ res1['house_structure'].fillna(random.choice(house_structures),inplace=True)
 res1.describe()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504220628197.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 这里可以看到存在房价为0的数据，以及不合理的面积数值，稍后做相关处理。
 接下来检查面积与价格之间的关系图：
 
@@ -136,6 +140,7 @@ plt.ylabel('单价',fontsize=15)
 plt.show()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504220903234.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 可以明显观察到存在异常情况。最后观察房价的箱线图：
 
 ```python
@@ -164,6 +169,7 @@ print(res1[res1['unit_price']==0])
 print(res1[res1['unit_price']==0]['community_name'])
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504221443528.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 由于数据量过小，所以直接删除`res1.drop(res1[res1['price']==0].index,inplace=True)`,但是如果对于存在一定数量相关值时，不能直接删除，这样会影响数据。这里可以采用一种替换值法：获取到每条数据对应的小区的均价，用这个均价来填充房源单价，面积同样采用这个方法，最后房屋总价通过计算单价和面值积获得。当然也可用机器学习算法建模获取与待处理目标最相近的房源的数据来填充该处理目标。处理后的面积散点图：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504222159595.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
 
@@ -171,6 +177,7 @@ print(res1[res1['unit_price']==0]['community_name'])
 绘制出装修情况，建筑结构，房屋用途，房屋面积与房价的散点图：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504222408539.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504222408517.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
 通过散点图可以观察到哪些是异常值点，例如：construction_area与price的关系图中，有几个离群的 construction_area值很高的数据，可以推测出现这种情况的原因。或许他们代表了相当高级地区，也就解释了高价。 这些点很明显不能代表典型样例，所以我们将它们定义为异常值并删除。
 同理，对于其他特征存在的不合理的离群点，在这里也考虑将其删除。
 
@@ -285,6 +292,7 @@ for idi,community_name,region in zip(list(complete_data["id"]),list(complete_dat
 ```
 过程截取：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504225728572.png#pic_center)
+
 由于数据不能整数2000，所以还会遗留一部分数据，接下来将这部分数据存储：`df_latlng = pd.DataFrame(lat_lng_data)
 df_latlng.to_csv("./cleandata/latlng100983.csv")`
 
@@ -405,6 +413,7 @@ for file in res:
 position_result = pd.concat(datas)
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200504231631965.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 删除Unnaemd列，并保存为CSV文件:
 `
 del position_result['Unnamed: 0']
@@ -447,6 +456,7 @@ plt_distribution(df, 'price')        # 目标变量变换前的分布情况
 对数变换前，目标变量的分布情况:
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220129330.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505220129317.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
 显然目标变量呈现明显的偏态分布，这里我们需要将它变换成无偏的正态分布，因为通常的线性模型所针对的数据都是正态分布的数据。
 
 `df["price"] = np.log1p(df["price"]) # 对数变换`
@@ -466,6 +476,7 @@ plt_distribution(df, 'price')        # 目标变量变换前的分布情况
 查看楼层信息：`np.unique(df['floor'])`
 *截图不完整*
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/2020050522075573.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 定义函数`process_floor`对顺序变量进行编码,以10层为标准，将楼层分为6个等级：
 
 - 低于10层且位于该楼的低层，即数据集中的低楼层：level=0
@@ -538,6 +549,7 @@ for col in lab_cols:
 
 查看户型数值信息`df['type'].value_counts()`：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222150545.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 单独处理户型，用 str.extract() 方法，将"室","厅","卫"都提取出来，单独作为三个新特征：
 
 ```python
@@ -566,6 +578,7 @@ data = pd.concat([df, district], axis=1)
 `fin_data = data.copy()`
 `data.drop(['unit_price','price','title','floor','construction_area','from_url','idi','image_urls','release_date','lat','lng','community_name','type','orientation','elevator', 'purposes', 'house_structure','decoration'], axis=1, inplace=True)`
 `print(data)`
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505222726530.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
 
 **3. 查看相关系数**
@@ -603,6 +616,7 @@ g = g.map(sns.distplot, "value")
 plt.show()
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505223257123.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
 计算各数值型特征变量的偏度（skewness）：
 
 ```python
@@ -612,6 +626,7 @@ skewness
 # skewness[skewness["Skew"].abs()>0.75]
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200505223420113.png#pic_center)
+
 根据图像显示，可以看到数值型特征变量偏移程度，此处设置阈值为1，对偏度大于阈值的特征进行log函数变换操作以提升质量：
 
 ```python
