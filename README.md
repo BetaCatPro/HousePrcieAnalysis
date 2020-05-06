@@ -683,15 +683,19 @@ y_test = ss_y.transform(y_test)
 模型评估方法：
 
 MSE
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409917.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 R2
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409907.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 MAE
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409912.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 RMSE
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 
