@@ -674,3 +674,207 @@ x_test = ss_x.transform(x_test)
 y_train = ss_y.fit_transform(y_train)
 y_test = ss_y.transform(y_test)
 ```
+
+
+5.2 建模准备
+
+所谓建模也就是根据所研究的问题选择恰当的算法搭建学习模型，并且基于所设定的模型评价指标，在训练过程中调整模型参数以使得模型的整体性能达到最优。
+
+模型评估方法：
+
+MSE
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409917.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+R2
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409907.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+MAE
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409912.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+RMSE
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211409915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+
+
+这里我们首先自定义获取均方误差，均方根误差，和交叉验证的函数：
+
+```python
+def get_mse(records_real, records_predict):
+    # 均方误差 估计值与真值 偏差
+    if len(records_real) == len(records_predict):
+        return sum([(x - y) ** 2 for x, y in zip(records_real, records_predict)]) / len(records_real)
+    else:
+        return None
+```
+
+```python
+def get_rmse(records_real, records_predict):
+    # 均方根误差：是均方误差的算术平方根
+    mse = get_mse(records_real, records_predict)
+    if mse:
+        return math.sqrt(mse)
+    else:
+        return None
+```
+
+```python
+#定义交叉验证的策略，以及评估函数
+def rmse_cv(model,X,y):
+    # 针对各折数据集的测试结果的均方根误差
+    rmse = np.sqrt(-cross_val_score(model, X, y, scoring="neg_mean_squared_error", cv=5))   # cv 代表数据划分的KFold折数
+    return rmse
+```
+另外还需定义一个函数用于网格搜索，方便我们找到更好的参数-例如决策树的最大深度，剪枝策略等：
+
+```python
+# 搜索各个算法的超参数
+# 定义先验参数网格搜索验证方法
+class grid():
+    def __init__(self,model):
+        self.model = model
+    
+    def grid_get(self,X,y,param_grid):
+        grid_search = GridSearchCV(self.model,param_grid,cv=5, scoring="neg_mean_squared_error")
+        grid_search.fit(X,y)
+        # 打印最佳参数及对应的评估指标
+        print(grid_search.best_params_, np.sqrt(-grid_search.best_score_))
+        grid_search.cv_results_['mean_test_score'] = np.sqrt(-grid_search.cv_results_['mean_test_score'])
+        
+        # 打印单独的各参数组合参数及对应的评估指标
+        print(pd.DataFrame(grid_search.cv_results_)[['params','mean_test_score','std_test_score']])
+```
+其实，在开始训练模型前，最好再进行一次主成分分析，这样做的目的是为了去除相关性，有助于帮助提升模型训练的效果，不单单是为了特征降维。
+
+经过尝试，主成分分分析对于最终分数的提升不是很大，因为我们数据集的特征很少，特征之间的相关性很弱，所以效果不是很显著。而对于特征数很大比如几百个特征，这时效果就提升很显著，因为可能处理数据时新建的特征和原始特征存在相关性，这可能导致较强的多重共线性 (Multicollinearity) ，而主成分分分析可以去除它们中的相关性。
+
+n_components不能超过特征总数
+`pca_model = PCA(n_components=33)`
+`x_train = pca_model.fit_transform(x_train)`
+`y_train = pca_model.transform(y_train)`
+
+5.3 简单算法模型选择
+
+这里采用K近邻，线性回归算法模型。
+
+- K近邻回归模型不需要训练参数，只需要借助周围K个最近训练样本的目标值，对待测试样本的回归值进行决策。由此就衍生出衡量待测样本回归值的不同方式，即普通的算术平均算法和考虑距离差异的加权平均。
+- 在线性回归中，数据使用线性预测函数来建模，并且未知的模型参数也是通过数据来估计。常用最小二乘逼近来拟合。
+
+在sklearn中进行数据建模非常简单，它已经定义好了一些列模型，我们秩序调用即可。
+
+```python
+from sklearn.neighbors import KNeighborsRegressor
+# 初始化模型
+knn = KNeighborsRegressor()
+# 模型训练
+knn.fit(x_train,y_train)
+# 模型预测
+y_pre_knn = knn.predict(x_test)
+# 模型评估
+knn_score = r2_score(y_test,y_pre_knn)
+# 这里使用的r2决定系数
+print(knn_score)
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506210655990.png#pic_center)
+
+r2决定系数越趋近1越好，MSE,RMSE值越趋近0越好
+
+使用均方误差：`knn_score = get_mse(y_test,y_pre_knn)`:
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211629307.png#pic_center)
+
+使用均方根误差：`knn_score = get_rmse(y_test,y_pre_knn)`:
+![在这里插入图片描述](https://img-blog.csdnimg.cn/2020050621174079.png#pic_center)
+
+进行5此交叉验证`rmse_cv(knn,x_train,y_train)`：
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506211932494.png#pic_center)
+
+这里交叉验证使用的是均方根误差来评估模型，可以看到，每次结果相差不大，但总体结果不太好，一方面说明K近邻算法并不太适合此数据集，另一方面也可能数我们数据集不是太好。
+
+同理线性回归：
+
+```python
+linear = LinearRegression()
+linear.fit(x_train,y_train)
+y_pre_linear = linear.predict(x_test)
+linear_score=r2_score(y_test,y_pre_linear)
+print(linear_score)
+```
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506212239797.png#pic_center)
+
+可以看到，结果还没有K近邻算法表现得好。
+
+5.4 集成模型的算法选择
+
+本次用于构建堆叠模型的回归算法有ElasticNet，SVR，BayesianRidge，Lasso，Ridge。
+
+5.4.1 选定算法的先验参数预设，利用网格交叉验证的思想，选出各算法的最优先验参数：
+
+- Lasso回归
+
+```python
+param_grid = {'alpha': [0.0004,0.0005,0.0006,0.0007,0.0008,0.0009],'max_iter':[10000],'random_state':[1]}
+grid(Lasso()).grid_get(x_train, y_train, param_grid)
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506222242779.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
+-  Ridge(岭回归)
+
+```python
+param_grid = {'alpha':[35,40,45,50,55,60,65,70,80,90]}
+grid(Ridge()).grid_get(x_train, y_train, param_grid)
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506222341134.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
+- SVR(支持向量回归)
+
+```python
+param_grid = {'C':[11,12,13,14,15],'kernel':["rbf"],"gamma":[0.0003,0.0004],"epsilon":[0.008,0.009]}
+grid(SVR()).grid_get(x_train, y_train, param_grid)
+```
+
+- ElasticNet回归
+
+```python
+param_grid = {'alpha':[0.0005,0.0008,0.004,0.005],'l1_ratio':[0.08,0.1,0.3,0.5,0.7],'max_iter':[10000],'random_state':[3]}
+grid(ElasticNet()).grid_get(x_train, y_train, param_grid)
+```
+
+其他算法类似，搜索出最佳超参数后，根据网格交叉验证结果指定各算法的超参数：
+
+```python
+#指定每一个算法的参数
+lasso = Lasso(alpha=0.0004,random_state=1,max_iter=10000)
+ridge = Ridge(alpha=35)
+svr = SVR(gamma= 0.0004,kernel='rbf',C=14,epsilon=0.009)
+# ker = KernelRidge(alpha=0.4 ,kernel='polynomial',degree=3 , coef0=1.2)
+ela = ElasticNet(alpha=0.004,l1_ratio=0.08,random_state=3,max_iter=10000)
+bay = BayesianRidge()
+xgb = XGBRegressor(colsample_bytree=0.4603, gamma=0.0468,learning_rate=0.05, max_depth=3,
+                   min_child_weight=1.7817, n_estimators=2200,reg_alpha=0.4640, 
+                   reg_lambda=0.8571,subsample=0.5213, silent=1,random_state =7, nthread = -1)
+lgbm = LGBMRegressor(objective='regression',num_leaves=5,learning_rate=0.05, n_estimators=700,max_bin = 55,
+                     bagging_fraction = 0.8,bagging_freq = 5, feature_fraction = 0.25,feature_fraction_seed=9, 
+                     bagging_seed=9,min_data_in_leaf = 6, min_sum_hessian_in_leaf = 11)
+GBR = GradientBoostingRegressor(n_estimators=3000, learning_rate=0.05,max_depth=4, max_features='sqrt',
+                                min_samples_leaf=15, min_samples_split=10, loss='huber', random_state =5)
+```
+
+初步用每个算法训练数据，得到各模型的R2_score:
+
+```python
+score = []
+models = [ela,svr,bay,lasso,ridge,xgb,lgbm,GBR]
+for regre in models:
+    regre.fit(x_train,y_train)
+    y_pre_regre = regre.predict(x_test)
+    regre_score=r2_score(y_test,y_pre_regre)
+    score.append(regre_score)
+    print('current model is {},rmse: {}'.format(regre,regre_score))
+print('Optimal model is: {} , score is : {}'.format(models[score.index(max(score))],max(score)))
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506224451928.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200506224451918.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+可以看到结果：梯度提升回归（Gradient boosting regression，GBR）得到的结果最优，为0.889922
+
+## 六. 聚类分析
