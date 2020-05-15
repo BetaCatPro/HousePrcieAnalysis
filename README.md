@@ -921,6 +921,20 @@ k-Means算法是一种使用最普遍的聚类算法，它是一种无监督学�
 3. 关于离群点，离群点就是远离整体的，非常异常、非常特殊的数据点。因为k-means算法对离群点十分敏感，所以在聚类之前应该将这些“极大”、“极小”之类的离群数据都去掉，否则会对于聚类的结果有影响。离群点的判定标准是根据数据可视化分析过程的散点图和箱线图进行判定。本数据集已经完成数据清洗工作，所以不存在离群值。
 4. 数据的标准化，因为总价的单位为万元，单价的单位为元/平米，建筑面积的单位为平米，所以数据点计算出欧几里德距离的单位是没有意义的。同时，总价都是5500以内的数，建筑面积都是1000以内的数，但单价都是100000以下的数，在计算距离时单价起到的作用就比总价大，总价和单价的作用都远大于建筑面积，这样聚类出来的结果是有问题的。这样的情况下，我们需要将数据标准化，即将数据按比例缩放，使之都落入一个特定区间内。去除数据的单位限制，将其转化为无量纲的纯数值，便于不同单位或量级的指标能够进行计算和比较。我们将单价、总价和面积都映射到1000，因为面积本身就都在1000以内，不要特别处理。单价在计算距离时，需要先乘以映射比例0.01，总价需要乘以映射比例0.18。进行数据标准化前和进行数据标准化后的聚类效果对比如下：
 
+标准化前：
 
+![在这里插入图片描述](https://img-blog.csdnimg.cn/2020051521314962.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200515213148963.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+
+标准化后：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200515213206200.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200515213206166.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70)
 
 **聚类结果：**
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200515213326609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2J5NjY3MTcxNQ==,size_16,color_FFFFFF,t_70#pic_center)
+
+
+
+
